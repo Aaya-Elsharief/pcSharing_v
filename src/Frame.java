@@ -1032,7 +1032,12 @@ public class Frame extends javax.swing.JFrame {
 
     private void jStartDiscoveryButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jStartDiscoveryButtonActionPerformed
         // TODO add your handling code here:
-        
+        Discovery discovery = new Discovery();
+        try {
+            discovery.start();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_jStartDiscoveryButtonActionPerformed
 
     private void jSideReceivePanel1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideReceivePanel1MouseClicked
