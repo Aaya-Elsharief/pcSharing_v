@@ -1,8 +1,7 @@
 
-
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -19,10 +18,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,6 +32,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
@@ -48,7 +47,7 @@ import javax.swing.border.EmptyBorder;
  * @author hp
  */
 public class Frame extends javax.swing.JFrame {
-    
+
     static Socket socket;
     static ServerSocket serverSocket;
     static InputStream stream;
@@ -60,11 +59,15 @@ public class Frame extends javax.swing.JFrame {
     static ArrayList<MyFile> myFiles = new ArrayList<>(); // Array list to hold information about the files received.
     static int fileId = 0;
     static JList list = new JList();
-    
-    
-    public static void SQLiteDB() {
+    static ArrayList<DeviceInfo> deviceInfoList = new ArrayList<>();
+    static int originalSize = deviceInfoList.size();
+    static String deviceIP;
+    static int devicePort;
+    static String myPort;
+
+    /*   public static void SQLiteDB() {
         Connection connection = null;
-        
+
         try {
             // Class.forName("org.sqlite.JDBC");
             connection = DriverManager.getConnection("jdbc:sqlite:/D:\\sqlite\\sqlite-tools-win32-x86-3370000\\sqliteDB");
@@ -73,57 +76,63 @@ public class Frame extends javax.swing.JFrame {
             System.exit(0);
         }
         System.out.println("Opened database successfully");
-    }
-    
+    }*/
     public static MouseListener getMyMouseListener() {
         return new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 // Get the source of the click which is the JPanel.
-                //   jlFileRecivedName = (JLabel) e.getSource();
                 JPanel jPanel = (JPanel) e.getSource();
-                
-                System.out.println("HHHHHHello");
                 // Get the ID of the file.
                 int fileId = Integer.parseInt(jPanel.getName());
-                System.out.println("fileId = " + fileId);
+                ///////////////  System.out.println("fileId = " + fileId);
                 // Loop through the file storage and see which file is the selected one.
-
-                System.out.println(myFiles);
+                /////////////// System.out.println(myFiles);
                 for (MyFile myFile : myFiles) {
                     if (myFile.getId() == fileId) {
-                        System.out.println("myFile.getId() " + myFile.getId() + " fileId " + fileId);
-                        JFrame jfPreview = createFrame(myFile.getName(), myFile.getData(), myFile.getFileExtension());
 
-                        // JOptionPane.setRootFrame(jfPreview);
-                        jfPreview.setVisible(true);
+                        JFrame jFrame = new JFrame();
+                        int result = JOptionPane.showConfirmDialog(jFrame, "Are you sure you want to download:  " + myFile.getName() + "?");
+
+                        if (result == 1) {
+                            System.out.println("You pressed NO");
+
+                        } else if (result != 0) {
+                            System.out.println("You pressed Cancel");
+
+                        } else {
+                            System.out.println("You pressed Yes");
+                            System.out.println(myFile.getData());
+                            downloadRecivedFile(myFile.getName(), myFile.getData());
+                        }
+
                     }
                 }
             }
-            
+
             @Override
             public void mousePressed(MouseEvent e) {
-                
+
             }
-            
+
             @Override
             public void mouseReleased(MouseEvent e) {
-                
+
             }
-            
+
             @Override
             public void mouseEntered(MouseEvent e) {
-                
+
             }
-            
+
             @Override
             public void mouseExited(MouseEvent e) {
-                
+
             }
-            
+
         };
     }
-    
+
     private static String getFileExtension(String fileName) {
         // Get the file type by using the last occurence of . (for example aboutMe.txt returns txt).
         // Will have issues with files like myFile.tar.gz.
@@ -135,21 +144,25 @@ public class Frame extends javax.swing.JFrame {
         } else {
             return "No extension found.";
         }
-        
-    }
-    
-    public static JFrame createFrame(String fileName, byte[] fileData, String fileExtension) {
 
+    }
+
+    /*
+    public static JFrame createFrame(String fileName, byte[] fileData, String fileExtension) {
         // Frame to hold everything.
         JFrame jFrame = new JFrame("File Downloader");
-        //ImageIcon img = new ImageIcon("/DataTransfareImages/line-00.png");
-        //  jFrame.setIconImage(img.getImage());
+
+        ImageIcon img = new ImageIcon("..\\DataTransfare\\src\\DataTransfareImages\\line0.png");
+        jFrame.setIconImage(img.getImage());
+
         // Set the size of the frame.
-        jFrame.setSize(500, 500);
+        jFrame.setSize(600, 600);
         jFrame.setLocationRelativeTo(null);  // *** this will center your app ***
+
         // Panel to hold everything.
         JPanel jPanel = new JPanel();
         jPanel.setBackground(new java.awt.Color(126, 52, 126));
+
         // Make the layout a box layout with child elements stacked on top of each other.
         jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
 
@@ -208,12 +221,20 @@ public class Frame extends javax.swing.JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Create the file with its name.
-                File fileToDownload = new File(fileName);
+                File f = new File(".\\Inbox");
+                if (!(f.exists() && !f.isDirectory())) {
+                    new File(".\\Inbox").mkdirs();
+                }
+                File fileToDownload = new File(".\\Inbox\\" + fileName);
+                ////////////////////  System.out.println("PAAATH" + fileToDownload.getAbsolutePath());
+                //     Desktop.getDesktop().open(new File("..\\DataTransfare\\Inbox"));
                 try {
                     // Create a stream to write data to the file.
                     FileOutputStream fileOutputStream = new FileOutputStream(fileToDownload);
                     // Write the actual file data to the file.
                     fileOutputStream.write(fileData);
+
+                    //  fileToDownload.
                     // Close the stream.
                     fileOutputStream.close();
                     // Get rid of the jFrame. after the user clicked yes.
@@ -221,7 +242,7 @@ public class Frame extends javax.swing.JFrame {
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
-                
+
             }
         });
 
@@ -245,11 +266,11 @@ public class Frame extends javax.swing.JFrame {
 
         // Return the jFrame so it can be passed the right data and then shown.
         return jFrame;
-        
+
     }
-    
-    private static void readReceivedFile(DataInputStream dataInputStream) {
-        
+
+     */ private static void readReceivedFile(DataInputStream dataInputStream) {
+
         try {
 
             // Read the size of the file name so know when to stop reading.
@@ -284,7 +305,7 @@ public class Frame extends javax.swing.JFrame {
                     jlFileName.setForeground(new java.awt.Color(51, 0, 51));
                     jlFileName.setBackground(new java.awt.Color(255, 255, 255));
                     jlFileName.setBorder(new EmptyBorder(10, 0, 10, 0));
-                    
+
                     if (getFileExtension(fileName).equalsIgnoreCase("txt")) {
                         // Set the name to be the fileId so you can get the correct file from the panel.
                         jPanelFileRow.setName((String.valueOf(fileId)));
@@ -309,46 +330,45 @@ public class Frame extends javax.swing.JFrame {
                     myFiles.add(new MyFile(fileId, fileName, fileContentBytes, getFileExtension(fileName)));
                     // Increment the fileId for the next file to be received.
                     fileId++;
-                    System.out.println("Hello fileid " + fileId);
+                    /////////////////////////  System.out.println("Hello fileid " + fileId);
                     jPaneln.validate();
-                    
+
                 }
-                
+
             }
         } catch (IOException ex) {
             Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    private static void readReceivedMsg(InputStreamReader inputStreamReader) {
+
+    private static void readReceivedMsg(InputStreamReader inputStreamReader, String sendername) {
         try {
             bufferedReader = new BufferedReader(inputStreamReader);
             message = bufferedReader.readLine();
-            
-            System.out.println(message);
-            
+
+            //////////////////     System.out.println(message);
             if (jTextArea1.getText().equals("")) {
                 jTextArea1.setText("Sender: " + message);
             } else {
-                jTextArea1.setText(jTextArea1.getText() + "\n Sender: " + message);
+                jTextArea1.setText(jTextArea1.getText() + "\n Sender (" + sendername + "): " + message);
             }
         } catch (IOException ex) {
             Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+
     }
-    
+
     private static String checkRecived(char[] action) {
-        
+
         char[] chat = "chat".toCharArray();
         char[] file = "file".toCharArray();
-        
+
         for (int i = 0; i < 4; i++) {
             if (action[i] == chat[i]) {
-                System.out.println("msg");
+                ///////////      System.out.println("msg");
                 return "Msg";
             } else if ((action[i] == file[i])) {
-                System.out.println("file");
+                ///////////////     System.out.println("file");
                 return "file";
             }
         }
@@ -360,7 +380,7 @@ public class Frame extends javax.swing.JFrame {
      */
     public Frame() {
         initComponents();
-        
+
     }
 
     /**
@@ -386,9 +406,6 @@ public class Frame extends javax.swing.JFrame {
         jSideReceivePanel = new javax.swing.JPanel();
         jLabel11 = new javax.swing.JLabel();
         jLabel12 = new javax.swing.JLabel();
-        jSideReceivePanel1 = new javax.swing.JPanel();
-        jLabel15 = new javax.swing.JLabel();
-        jLabel16 = new javax.swing.JLabel();
         jsideChatPanel = new javax.swing.JPanel();
         jLabel7 = new javax.swing.JLabel();
         jLabel8 = new javax.swing.JLabel();
@@ -403,11 +420,13 @@ public class Frame extends javax.swing.JFrame {
         jLabel6 = new javax.swing.JLabel();
         jLabel14 = new javax.swing.JLabel();
         jtfDeviceName = new javax.swing.JTextField();
+        jBtnConnect = new javax.swing.JButton();
         jStartDiscoveryButton = new javax.swing.JButton();
         jSeparator2 = new javax.swing.JSeparator();
-        jPanel1 = new javax.swing.JPanel();
+        jScrollPane4 = new javax.swing.JScrollPane();
+        jPanelHomeList = new javax.swing.JPanel();
+        jLabel3 = new javax.swing.JLabel();
         javax.swing.JPanel jChatPanel = new javax.swing.JPanel();
-        jpFileRow1 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
         jTextField1 = new javax.swing.JTextField();
@@ -418,9 +437,9 @@ public class Frame extends javax.swing.JFrame {
         btnSendFile = new javax.swing.JButton();
         jReceivedFilesPanel = new javax.swing.JPanel();
         jLRecived1 = new javax.swing.JLabel();
-        jlFileRecivedName = new javax.swing.JLabel();
         jScrollPane2 = new javax.swing.JScrollPane();
         jPaneln = new javax.swing.JPanel();
+        jButton1 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Line for sharing");
@@ -436,7 +455,7 @@ public class Frame extends javax.swing.JFrame {
         jIntroPanel.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jLabel17.setIcon(new javax.swing.ImageIcon(getClass().getResource("/DataTransfareImages/line-l1.png"))); // NOI18N
-        jIntroPanel.add(jLabel17, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 200, 203, 208));
+        jIntroPanel.add(jLabel17, new org.netbeans.lib.awtextra.AbsoluteConstraints(590, 180, 203, 208));
 
         jContentPane.setBackground(new java.awt.Color(255, 255, 255));
         jContentPane.setForeground(new java.awt.Color(255, 255, 255));
@@ -513,31 +532,6 @@ public class Frame extends javax.swing.JFrame {
         jLabel12.setText("Receive File");
         jSideReceivePanel.add(jLabel12, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 11, 116, -1));
 
-        jSideReceivePanel1.setBackground(new java.awt.Color(51, 0, 51));
-        jSideReceivePanel1.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        jSideReceivePanel1.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jSideReceivePanel1MouseClicked(evt);
-            }
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                jSideReceivePanel1MouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                jSideReceivePanel1MouseExited(evt);
-            }
-        });
-        jSideReceivePanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        jLabel15.setIcon(new javax.swing.ImageIcon(getClass().getResource("/DataTransfareImages/icons8_download_20px.png"))); // NOI18N
-        jSideReceivePanel1.add(jLabel15, new org.netbeans.lib.awtextra.AbsoluteConstraints(14, 15, -1, -1));
-
-        jLabel16.setFont(new java.awt.Font("Serif", 1, 18)); // NOI18N
-        jLabel16.setForeground(new java.awt.Color(204, 204, 204));
-        jLabel16.setText("Receive File");
-        jSideReceivePanel1.add(jLabel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 11, 116, -1));
-
-        jSideReceivePanel.add(jSideReceivePanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 293, 250, 50));
-
         jSidePanel.add(jSideReceivePanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 293, 250, 50));
 
         jsideChatPanel.setBackground(new java.awt.Color(51, 0, 51));
@@ -586,16 +580,14 @@ public class Frame extends javax.swing.JFrame {
         jLabel10.setFont(new java.awt.Font("Serif", 1, 18)); // NOI18N
         jLabel10.setForeground(new java.awt.Color(204, 204, 204));
         jLabel10.setText("Send File");
-        jLabel10.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
-            public void mouseMoved(java.awt.event.MouseEvent evt) {
-                jLabel10MouseMoved(evt);
-            }
-        });
-        jSideSendFilePanel.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 11, 116, -1));
+        jSideSendFilePanel.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 11, 80, -1));
 
         jSidePanel.add(jSideSendFilePanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 241, 250, 50));
 
+        jTabbedPane1.setBackground(new java.awt.Color(255, 255, 255));
+
         jHomePanel.setBackground(new java.awt.Color(255, 255, 255));
+        jHomePanel.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         jHomePanel.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         javax.swing.GroupLayout jpFileRowLayout = new javax.swing.GroupLayout(jpFileRow);
@@ -634,12 +626,18 @@ public class Frame extends javax.swing.JFrame {
         jHomePanel.add(jLabel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 250, 340, 30));
 
         jtfDeviceName.setToolTipText("Hello");
-        jtfDeviceName.addActionListener(new java.awt.event.ActionListener() {
+        jtfDeviceName.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(229, 213, 229)));
+        jHomePanel.add(jtfDeviceName, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 290, 1050, 40));
+
+        jBtnConnect.setFont(new java.awt.Font("Serif", 1, 14)); // NOI18N
+        jBtnConnect.setText("Connect");
+        jBtnConnect.setActionCommand("");
+        jBtnConnect.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jtfDeviceNameActionPerformed(evt);
+                jBtnConnectActionPerformed(evt);
             }
         });
-        jHomePanel.add(jtfDeviceName, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 290, 1050, 40));
+        jHomePanel.add(jBtnConnect, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 600, 1040, 40));
 
         jStartDiscoveryButton.setFont(new java.awt.Font("Serif", 1, 14)); // NOI18N
         jStartDiscoveryButton.setForeground(new java.awt.Color(51, 0, 51));
@@ -656,18 +654,20 @@ public class Frame extends javax.swing.JFrame {
         jSeparator2.setForeground(new java.awt.Color(102, 0, 102));
         jHomePanel.add(jSeparator2, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 210, 1150, 10));
 
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 260, Short.MAX_VALUE)
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 140, Short.MAX_VALUE)
-        );
+        jScrollPane4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(229, 213, 229)));
 
-        jHomePanel.add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 420, 260, 140));
+        jPanelHomeList.setBackground(new java.awt.Color(255, 255, 255));
+        jPanelHomeList.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(229, 213, 229)));
+        jPanelHomeList.setForeground(new java.awt.Color(102, 0, 102));
+        jPanelHomeList.setFont(new java.awt.Font("Serif", 2, 18)); // NOI18N
+        jPanelHomeList.setLayout(new java.awt.CardLayout());
+        jScrollPane4.setViewportView(jPanelHomeList);
+
+        jHomePanel.add(jScrollPane4, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 440, 1040, 150));
+
+        jLabel3.setFont(new java.awt.Font("Serif", 1, 14)); // NOI18N
+        jLabel3.setForeground(new java.awt.Color(102, 0, 102));
+        jHomePanel.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 400, 1050, 40));
 
         jTabbedPane1.addTab("tab1", jHomePanel);
 
@@ -675,34 +675,18 @@ public class Frame extends javax.swing.JFrame {
         jChatPanel.setPreferredSize(new java.awt.Dimension(1370, 350));
         jChatPanel.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        javax.swing.GroupLayout jpFileRow1Layout = new javax.swing.GroupLayout(jpFileRow1);
-        jpFileRow1.setLayout(jpFileRow1Layout);
-        jpFileRow1Layout.setHorizontalGroup(
-            jpFileRow1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-        jpFileRow1Layout.setVerticalGroup(
-            jpFileRow1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
-        );
-
-        jChatPanel.add(jpFileRow1, new org.netbeans.lib.awtextra.AbsoluteConstraints(338, 271, -1, -1));
+        jScrollPane1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(229, 213, 229)));
 
         jTextArea1.setEditable(false);
         jTextArea1.setColumns(20);
         jTextArea1.setFont(new java.awt.Font("Serif", 0, 18)); // NOI18N
         jTextArea1.setRows(5);
-        jTextArea1.setText("Hello Friend");
         jScrollPane1.setViewportView(jTextArea1);
 
-        jChatPanel.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 140, 1050, 460));
+        jChatPanel.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 130, 1010, 460));
 
-        jTextField1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField1ActionPerformed(evt);
-            }
-        });
-        jChatPanel.add(jTextField1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 600, 1000, 30));
+        jTextField1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(229, 213, 229)));
+        jChatPanel.add(jTextField1, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 600, 950, 30));
 
         btnSendMsg.setBackground(new java.awt.Color(204, 204, 204));
         btnSendMsg.setIcon(new javax.swing.ImageIcon(getClass().getResource("/DataTransfareImages/icons8_email_send_20px.png"))); // NOI18N
@@ -711,7 +695,7 @@ public class Frame extends javax.swing.JFrame {
                 btnSendMsgActionPerformed(evt);
             }
         });
-        jChatPanel.add(btnSendMsg, new org.netbeans.lib.awtextra.AbsoluteConstraints(1010, 600, -1, 30));
+        jChatPanel.add(btnSendMsg, new org.netbeans.lib.awtextra.AbsoluteConstraints(980, 600, 60, 30));
 
         jTabbedPane1.addTab("tab2", jChatPanel);
 
@@ -748,10 +732,10 @@ public class Frame extends javax.swing.JFrame {
             .addGroup(jSendFilePanelLayout.createSequentialGroup()
                 .addGap(25, 25, 25)
                 .addGroup(jSendFilePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jlFileName1, javax.swing.GroupLayout.PREFERRED_SIZE, 465, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnSendFile, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(btnSelectFile, javax.swing.GroupLayout.DEFAULT_SIZE, 1043, Short.MAX_VALUE))
-                .addContainerGap(287, Short.MAX_VALUE))
+                    .addComponent(jlFileName1, javax.swing.GroupLayout.PREFERRED_SIZE, 712, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnSelectFile, javax.swing.GroupLayout.DEFAULT_SIZE, 1042, Short.MAX_VALUE)
+                    .addComponent(btnSendFile, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(649, Short.MAX_VALUE))
         );
         jSendFilePanelLayout.setVerticalGroup(
             jSendFilePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -762,7 +746,7 @@ public class Frame extends javax.swing.JFrame {
                 .addComponent(btnSelectFile, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(btnSendFile, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(1331, Short.MAX_VALUE))
+                .addContainerGap(764, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("tab3", jSendFilePanel);
@@ -783,35 +767,37 @@ public class Frame extends javax.swing.JFrame {
         jPaneln.setLayout(new javax.swing.BoxLayout(jPaneln, javax.swing.BoxLayout.Y_AXIS));
         jScrollPane2.setViewportView(jPaneln);
 
+        jButton1.setFont(new java.awt.Font("Serif", 1, 14)); // NOI18N
+        jButton1.setForeground(new java.awt.Color(51, 0, 51));
+        jButton1.setText("View all downloaded files");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jReceivedFilesPanelLayout = new javax.swing.GroupLayout(jReceivedFilesPanel);
         jReceivedFilesPanel.setLayout(jReceivedFilesPanelLayout);
         jReceivedFilesPanelLayout.setHorizontalGroup(
             jReceivedFilesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jReceivedFilesPanelLayout.createSequentialGroup()
-                .addGroup(jReceivedFilesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jReceivedFilesPanelLayout.createSequentialGroup()
-                        .addGap(73, 73, 73)
-                        .addComponent(jLRecived1))
-                    .addGroup(jReceivedFilesPanelLayout.createSequentialGroup()
-                        .addGap(55, 55, 55)
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 774, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jlFileRecivedName, javax.swing.GroupLayout.PREFERRED_SIZE, 837, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(26, 26, 26)
+                .addGroup(jReceivedFilesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jLRecived1)
+                    .addComponent(jScrollPane2)
+                    .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, 1025, Short.MAX_VALUE))
+                .addContainerGap(665, Short.MAX_VALUE))
         );
         jReceivedFilesPanelLayout.setVerticalGroup(
             jReceivedFilesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jReceivedFilesPanelLayout.createSequentialGroup()
-                .addGroup(jReceivedFilesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jReceivedFilesPanelLayout.createSequentialGroup()
-                        .addGap(226, 226, 226)
-                        .addComponent(jlFileRecivedName, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jReceivedFilesPanelLayout.createSequentialGroup()
-                        .addGap(138, 138, 138)
-                        .addComponent(jLRecived1, javax.swing.GroupLayout.PREFERRED_SIZE, 86, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 346, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(999, Short.MAX_VALUE))
+                .addGap(110, 110, 110)
+                .addComponent(jLRecived1, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 392, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(524, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("tab4", jReceivedFilesPanel);
@@ -826,18 +812,16 @@ public class Frame extends javax.swing.JFrame {
             jContentPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jContentPaneLayout.createSequentialGroup()
                 .addComponent(jSidePanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0)
                 .addGroup(jContentPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 1160, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 1360, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
         );
         jContentPaneLayout.setVerticalGroup(
             jContentPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jSidePanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(jContentPaneLayout.createSequentialGroup()
-                .addGroup(jContentPaneLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(0, 0, Short.MAX_VALUE))
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+            .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(jSidePanel, javax.swing.GroupLayout.PREFERRED_SIZE, 1166, javax.swing.GroupLayout.PREFERRED_SIZE)
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -845,7 +829,7 @@ public class Frame extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addComponent(jIntroPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 1432, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jIntroPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 1947, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, 0)
                 .addComponent(jContentPane, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, Short.MAX_VALUE))
@@ -853,10 +837,9 @@ public class Frame extends javax.swing.JFrame {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jContentPane, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jIntroPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 908, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(jContentPane, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
+            .addComponent(jIntroPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
         pack();
@@ -872,20 +855,18 @@ public class Frame extends javax.swing.JFrame {
             jFileChooser.setDialogTitle("Choose a file to send.");
             // Show the dialog and if a file is chosen from the file chooser execute the following statements.
             int response = jFileChooser.showOpenDialog(null);
-            
+
             if (response == JFileChooser.APPROVE_OPTION) {
 //                 Get the selected file.
                 fileToSend[0] = jFileChooser.getSelectedFile();
 
-                //File filePath = new File("D:\\0Engeneering\\00_Graduation Project\\WifiP2P API.pdf");
-                //fileToSend[0] = filePath;
-                System.out.println(fileToSend[0] + " gggggggggg");
+                ///////////////////////// System.out.println(fileToSend[0] + " gggggggggg");
                 // Change the text of the java swing label to have the file name.
                 jlFileName1.setText("The file you want to send is: " + fileToSend[0].getName());
             }
     }//GEN-LAST:event_btnSelectFileActionPerformed
     }
-    
+
 
     private void btnSendFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSendFileActionPerformed
         // TODO add your handling code here:
@@ -896,10 +877,12 @@ public class Frame extends javax.swing.JFrame {
                 // If a file has been selected then do the following.
             } else {
                 try {
+
                     // Create an input stream into the file you want to send.
                     FileInputStream fileInputStream = new FileInputStream(fileToSend[0].getAbsolutePath());
                     // Create a socket connection to connect with the server.
-                    Socket socket = new Socket("192.168.1.111", 8080);
+                    Socket socket = new Socket(deviceIP, devicePort);
+
                     // Create an output stream to write to write to the server over the socket connection.
                     DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
                     // Get the name of the file you want to send and store it in filename.
@@ -923,31 +906,22 @@ public class Frame extends javax.swing.JFrame {
                     ex.printStackTrace();
                 }
             }
-            
+
         }
-        
+
 
     }//GEN-LAST:event_btnSendFileActionPerformed
 
-    private void jLabel10MouseMoved(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel10MouseMoved
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jLabel10MouseMoved
-
     private void jSideHomePanelMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideHomePanelMouseEntered
         // TODO add your handling code here:
-
-        //home side panel
         Color color = new Color(55, 20, 55);
         jSideHomePanel.setBackground(color);
-        
-
     }//GEN-LAST:event_jSideHomePanelMouseEntered
 
     private void jsideChatPanelMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jsideChatPanelMouseEntered
         // TODO add your handling code here:
         Color color = new Color(55, 20, 55);
         jsideChatPanel.setBackground(color);
-        
 
     }//GEN-LAST:event_jsideChatPanelMouseEntered
 
@@ -970,6 +944,10 @@ public class Frame extends javax.swing.JFrame {
         jTabbedPane1.setSelectedIndex(0);
         jLPageName.setText("Home");
 
+//        if (deviceInfoList.size() != originalSize) {
+//            showDevicesList();
+//        }
+
     }//GEN-LAST:event_jSideHomePanelMouseClicked
 
     private void jsideChatPanelMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jsideChatPanelMouseExited
@@ -982,8 +960,6 @@ public class Frame extends javax.swing.JFrame {
         // TODO add your handling code here:
         Color color = new Color(55, 20, 55);
         jSideSendFilePanel.setBackground(color);
-        
-
     }//GEN-LAST:event_jSideSendFilePanelMouseEntered
 
     private void jSideSendFilePanelMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideSendFilePanelMouseExited
@@ -1004,6 +980,7 @@ public class Frame extends javax.swing.JFrame {
         jsideChatPanel.setBackground(color);
         jTabbedPane1.setSelectedIndex(1);
         jLPageName.setText("Chat");
+
     }//GEN-LAST:event_jsideChatPanelMouseClicked
 
     private void jSideSendFilePanelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideSendFilePanelMouseClicked
@@ -1012,6 +989,7 @@ public class Frame extends javax.swing.JFrame {
         jSideSendFilePanel.setBackground(color);
         jTabbedPane1.setSelectedIndex(2);
         jLPageName.setText("Send File");
+
     }//GEN-LAST:event_jSideSendFilePanelMouseClicked
 
     private void jSideReceivePanelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideReceivePanelMouseClicked
@@ -1031,63 +1009,66 @@ public class Frame extends javax.swing.JFrame {
     private void btnSendMsgActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSendMsgActionPerformed
         try {
             // TODO add your handling code here:
-            Socket socket = new Socket("192.168.1.111", 8080);
+            Socket socket = new Socket(deviceIP, devicePort);
             PrintWriter printWriter = new PrintWriter(socket.getOutputStream());
             printWriter.write("chat" + jTextField1.getText());
             jTextArea1.setText(jTextArea1.getText() + "\n Me: " + jTextField1.getText());
             printWriter.flush();
             printWriter.close();
             socket.close();
-            
+
         } catch (IOException ex) {
             Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_btnSendMsgActionPerformed
 
-    private void jtfDeviceNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jtfDeviceNameActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jtfDeviceNameActionPerformed
-
     private void jStartDiscoveryButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jStartDiscoveryButtonActionPerformed
         // TODO add your handling code here:
-        Discovery discovery = new Discovery(list,jPanel1);
-        
+        Discovery discovery = new Discovery();
+//        System.out.println( deviceInfoList.get(0));
         try {
             discovery.start();
-            
-//             DefaultListModel DLM = new DefaultListModel();
-//            DLM.addElement("Mon");
-//            DLM.addElement("Frai");
-//            DLM.addElement("Sat");
-//            
-//            
-//          
-//            list.setModel(DLM);
-//            jPanel1.add(list);
-            
-           
-            
+            showDevicesList();
+
         } catch (InterruptedException ex) {
             Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_jStartDiscoveryButtonActionPerformed
 
-    private void jSideReceivePanel1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideReceivePanel1MouseClicked
+    private void jBtnConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBtnConnectActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jSideReceivePanel1MouseClicked
+        int indexList;
+        indexList = list.getSelectedIndex();
+        if (indexList == -1) {
+            jLabel3.setText("Please select device to connect with..");
+        } else {
+            //////////////////  System.out.println(indexList);
+            ////////////////////////    System.out.println("deviceInfoList.get ☻ " + deviceInfoList.get(indexList).getDeviceName());
+            jLabel3.setText("connected with: " + deviceInfoList.get(indexList).getDeviceName());
+            deviceIP = deviceInfoList.get(indexList).getIp();
+            devicePort = deviceInfoList.get(indexList).getPort();
 
-    private void jSideReceivePanel1MouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideReceivePanel1MouseEntered
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jSideReceivePanel1MouseEntered
+            /////////////////////  System.out.println(deviceIP + " aaa " + devicePort);
+        }
 
-    private void jSideReceivePanel1MouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideReceivePanel1MouseExited
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jSideReceivePanel1MouseExited
 
-    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField1ActionPerformed
-    
+    }//GEN-LAST:event_jBtnConnectActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        try {
+            // TODO add your handling code here:
+            File f = new File(".\\Inbox");
+            if (!(f.exists() && !f.isDirectory())) {
+                new File(".\\Inbox").mkdirs();
+            }
+
+            Desktop.getDesktop().open(new File(".\\Inbox"));
+
+        } catch (IOException ex) {
+            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_jButton1ActionPerformed
+
     public static void main(String args[]) {
 
         /* Set the Nimbus look and feel */
@@ -1116,52 +1097,80 @@ public class Frame extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                
+
                 Frame frame = new Frame();
-                ImageIcon img = new ImageIcon("/DataTransfareImages/line0.png");
+                ImageIcon img = new ImageIcon("..\\DataTransfare\\src\\DataTransfareImages\\line0.png");
                 frame.setIconImage(img.getImage());
-                
                 jContentPane.setVisible(false);
-                
                 frame.setVisible(true);
             }
         });
-        
-        SQLiteDB();
-        
+
+        //     SQLiteDB();
         try {
             // Create a server socket that the server will be listening with.
-            serverSocket = new ServerSocket(1234);
+            serverSocket = new ServerSocket(0);
+            myPort = "" + Frame.serverSocket.getLocalPort();
+            System.out.println("listening on port: " + serverSocket.getLocalPort());
+
         } catch (IOException ex) {
             Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         }
         // This while loop will run forever so the server will never stop unless the application is closed.
         while (true) {
-            
+
             try {
                 // Wait for a client to connect and when they do create a socket to communicate with them.
                 socket = serverSocket.accept(); //accpt TCP connection
+                InetAddress clientAddress = socket.getInetAddress();
+                System.out.println("clientAddress " + clientAddress);
+                String clientAdressString = clientAddress.getHostAddress();
+                System.out.println("clientAdressString nam " + clientAdressString);
+                String hostname = "Unknown Device";
+                for (DeviceInfo dev : Frame.deviceInfoList) {
+                    if (clientAdressString.equals(dev.getIp())) {
+                        int index = Frame.deviceInfoList.indexOf(dev);
+                        DeviceInfo redev = Frame.deviceInfoList.remove(0);
+                        System.out.println("device ip " + dev.getIp());
+                        System.out.println("device name " + dev.getDeviceName());
 
-                // Stream to receive data from the client through the socket.
-                stream = socket.getInputStream();
-                inputStreamReader = new InputStreamReader(stream);
-                dataInputStream = new DataInputStream(stream);
+                        hostname = dev.getDeviceName();
+                        break;
+                    }
+                }
 
-                // Check if receive message or file
-                char[] action = new char[4];
-                for (int i = 0; i < 4; i++) {
-                    action[i] = (char) stream.read();
+                JFrame jFrame = new JFrame();
+                int result = JOptionPane.showConfirmDialog(jFrame, hostname + ": Want to send you message\\file.");
+
+                if (result == 1) {
+                    System.out.println("You pressed NO");
+
+                } else if (result != 0) {
+                    System.out.println("You pressed Cancel");
+
+                } else {
+                    System.out.println("You pressed Yes");
+
+                    // Stream to receive data from the client through the socket.
+                    stream = socket.getInputStream();
+                    inputStreamReader = new InputStreamReader(stream);
+                    dataInputStream = new DataInputStream(stream);
+
+                    // Check if receive message or file
+                    char[] action = new char[4];
+                    for (int i = 0; i < 4; i++) {
+                        action[i] = (char) stream.read();
+                    }
+                    String recivedType = checkRecived(action);
+                    if ("Msg".equals(recivedType)) {
+                        // System.out.println("recivedType = " + recivedType);
+                        readReceivedMsg(inputStreamReader, hostname);
+
+                    } else if ("file".equals(recivedType)) {
+                        // System.out.println("recivedType = " + recivedType);
+                        readReceivedFile(dataInputStream);
+                    }
                 }
-                String recivedType = checkRecived(action);
-                if ("Msg".equals(recivedType)) {
-                    // System.out.println("recivedType = " + recivedType);
-                    readReceivedMsg(inputStreamReader);
-                    
-                } else if ("file".equals(recivedType)) {
-                    // System.out.println("recivedType = " + recivedType);
-                    readReceivedFile(dataInputStream);
-                }
-                
             } catch (IOException ex) {
                 Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -1172,6 +1181,8 @@ public class Frame extends javax.swing.JFrame {
     private javax.swing.JButton btnSelectFile;
     private javax.swing.JButton btnSendFile;
     private javax.swing.JButton btnSendMsg;
+    private javax.swing.JButton jBtnConnect;
+    private javax.swing.JButton jButton1;
     private static javax.swing.JLayeredPane jContentPane;
     public javax.swing.JPanel jHomePanel;
     private javax.swing.JPanel jIntroPanel;
@@ -1183,39 +1194,73 @@ public class Frame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel14;
-    private javax.swing.JLabel jLabel15;
-    private javax.swing.JLabel jLabel16;
     private javax.swing.JLabel jLabel17;
     private javax.swing.JLabel jLabel2;
+    static javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
-    private static javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private static javax.swing.JPanel jPanelHomeList;
     private static javax.swing.JPanel jPaneln;
     private javax.swing.JPanel jReceivedFilesPanel;
     private javax.swing.JScrollPane jScrollPane1;
     private static javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JSeparator jSeparator2;
     private javax.swing.JPanel jSideHomePanel;
     private javax.swing.JPanel jSidePanel;
     private javax.swing.JPanel jSideReceivePanel;
-    private javax.swing.JPanel jSideReceivePanel1;
     private javax.swing.JPanel jSideSendFilePanel;
     private javax.swing.JButton jStartDiscoveryButton;
     private javax.swing.JTabbedPane jTabbedPane1;
     private static javax.swing.JTextArea jTextArea1;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JLabel jlFileName1;
-    private static javax.swing.JLabel jlFileRecivedName;
     private static javax.swing.JPanel jpFileRow;
-    private static javax.swing.JPanel jpFileRow1;
     private javax.swing.JPanel jsideChatPanel;
-    private javax.swing.JTextField jtfDeviceName;
+    static javax.swing.JTextField jtfDeviceName;
     // End of variables declaration//GEN-END:variables
 
+    public static void showDevicesList() {
+        DefaultListModel DLM = new DefaultListModel();
+        for (DeviceInfo dev : deviceInfoList) {
+            DLM.addElement(dev.getDeviceName());
+        }
+        list.setModel(DLM);
+        list.setBackground(new java.awt.Color(255, 255, 255));
+        list.setForeground(new java.awt.Color(102, 0, 102));
+        list.setFont(new java.awt.Font("Serif", 2, 18));
+
+        jPanelHomeList.add(list);
+    }
+
+    public static void downloadRecivedFile(String fileName, byte[] fileData) {
+        // Create the file with its name.
+        File f = new File(".\\Inbox");
+        if (!(f.exists() && !f.isDirectory())) {
+            new File(".\\Inbox").mkdirs();
+        }
+        File fileToDownload = new File(".\\Inbox\\" + fileName);
+        ////////////////////  System.out.println("PAAATH" + fileToDownload.getAbsolutePath());
+        //     Desktop.getDesktop().open(new File("..\\DataTransfare\\Inbox"));
+        try {
+            // Create a stream to write data to the file.
+            FileOutputStream fileOutputStream = new FileOutputStream(fileToDownload);
+            // Write the actual file data to the file.
+            fileOutputStream.write(fileData);
+
+            //  fileToDownload.
+            // Close the stream.
+            fileOutputStream.close();
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+    }
 }
