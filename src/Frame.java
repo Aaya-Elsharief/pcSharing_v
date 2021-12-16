@@ -1,11 +1,7 @@
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Desktop;
-import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.BufferedReader;
@@ -21,13 +17,19 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -63,7 +65,13 @@ public class Frame extends javax.swing.JFrame {
     static int originalSize = deviceInfoList.size();
     static String deviceIP;
     static int devicePort;
+    static PublicKey devicePublicKey;
     static String myPort;
+    static PublicKey myPublicKey;
+    static String myPublicKeyStr;
+
+    static RSA rsa = new RSA();
+
 
     /*   public static void SQLiteDB() {
         Connection connection = null;
@@ -137,6 +145,7 @@ public class Frame extends javax.swing.JFrame {
         // Get the file type by using the last occurence of . (for example aboutMe.txt returns txt).
         // Will have issues with files like myFile.tar.gz.
         int i = fileName.lastIndexOf('.');
+        // System.out.println("indexxxxxxxx "+ i);
         // If there is an extension.
         if (i > 0) {
             // Set the extension to the extension of the filename.
@@ -278,18 +287,22 @@ public class Frame extends javax.swing.JFrame {
 
             // If the file exists
             if (fileNameLength > 0) {
+                //    System.out.println("fileNameLength" +fileNameLength);
                 // Byte array to hold name of file.
                 byte[] fileNameBytes = new byte[fileNameLength];
                 // Read from the input stream into the byte array.
                 dataInputStream.readFully(fileNameBytes, 0, fileNameBytes.length);
                 // Create the file name from the byte array.
                 String fileName = new String(fileNameBytes);
+                //    System.out.println("fileName " + fileName);
                 // Read how much data to expect for the actual content of the file.
                 int fileContentLength = dataInputStream.readInt();
+                //    System.out.println("fileContentLength "+fileContentLength);
                 // If the file exists.
-                if (fileContentLength > 0) {
+                if (fileContentLength >= 0) {
                     // Array to hold the file data.
                     byte[] fileContentBytes = new byte[fileContentLength];
+                    //      System.out.println("fileContentBytes " +fileContentBytes);
                     // Read from the input stream into the fileContentBytes array.
                     dataInputStream.readFully(fileContentBytes, 0, fileContentBytes.length);
                     // Make it scrollable when the data gets in jpaneln.
@@ -341,16 +354,18 @@ public class Frame extends javax.swing.JFrame {
         }
     }
 
-    private static void readReceivedMsg(InputStreamReader inputStreamReader, String sendername) {
+    private static void readReceivedMsg(InputStreamReader inputStreamReader, String sendername) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         try {
             bufferedReader = new BufferedReader(inputStreamReader);
-            message = bufferedReader.readLine();
+            String encMessage = bufferedReader.readLine();
+         //   byte[] mes = encMessage.getBytes();
 
-            //////////////////     System.out.println(message);
+         //  message = rsa.decMessage(rsa.privateKey, mes);
+            System.out.println(encMessage);
             if (jTextArea1.getText().equals("")) {
-                jTextArea1.setText("Sender: " + message);
+                jTextArea1.setText("Sender: " + encMessage);
             } else {
-                jTextArea1.setText(jTextArea1.getText() + "\n Sender (" + sendername + "): " + message);
+                jTextArea1.setText(jTextArea1.getText() + "\n Sender (" + sendername + "): " + encMessage);
             }
         } catch (IOException ex) {
             Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
@@ -440,6 +455,7 @@ public class Frame extends javax.swing.JFrame {
         jScrollPane2 = new javax.swing.JScrollPane();
         jPaneln = new javax.swing.JPanel();
         jButton1 = new javax.swing.JButton();
+        jLabel15 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Line for sharing");
@@ -686,6 +702,11 @@ public class Frame extends javax.swing.JFrame {
         jChatPanel.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 130, 1010, 460));
 
         jTextField1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(229, 213, 229)));
+        jTextField1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField1ActionPerformed(evt);
+            }
+        });
         jChatPanel.add(jTextField1, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 600, 950, 30));
 
         btnSendMsg.setBackground(new java.awt.Color(204, 204, 204));
@@ -776,6 +797,8 @@ public class Frame extends javax.swing.JFrame {
             }
         });
 
+        jLabel15.setText("jLabel15");
+
         javax.swing.GroupLayout jReceivedFilesPanelLayout = new javax.swing.GroupLayout(jReceivedFilesPanel);
         jReceivedFilesPanel.setLayout(jReceivedFilesPanelLayout);
         jReceivedFilesPanelLayout.setHorizontalGroup(
@@ -783,6 +806,7 @@ public class Frame extends javax.swing.JFrame {
             .addGroup(jReceivedFilesPanelLayout.createSequentialGroup()
                 .addGap(26, 26, 26)
                 .addGroup(jReceivedFilesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 603, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLRecived1)
                     .addComponent(jScrollPane2)
                     .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, 1025, Short.MAX_VALUE))
@@ -794,7 +818,9 @@ public class Frame extends javax.swing.JFrame {
                 .addGap(110, 110, 110)
                 .addComponent(jLRecived1, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 392, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 346, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(524, Short.MAX_VALUE))
@@ -883,7 +909,7 @@ public class Frame extends javax.swing.JFrame {
                     // Create a socket connection to connect with the server.
                     Socket socket = new Socket(deviceIP, devicePort);
 
-                    // Create an output stream to write to write to the server over the socket connection.
+                    // Create an output stream to  write to the server over the socket connection.
                     DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
                     // Get the name of the file you want to send and store it in filename.
                     String fileName = fileToSend[0].getName();
@@ -1010,14 +1036,29 @@ public class Frame extends javax.swing.JFrame {
         try {
             // TODO add your handling code here:
             Socket socket = new Socket(deviceIP, devicePort);
+            String message = jTextField1.getText();
+            String encodedMessage = rsa.encMessage(message, devicePublicKey);
             PrintWriter printWriter = new PrintWriter(socket.getOutputStream());
-            printWriter.write("chat" + jTextField1.getText());
+            printWriter.write("chat" + encodedMessage);
+
+            System.out.println("chat !!♠" + jTextField1.getText());
+            System.out.println("\"chat\" + jTextField1.getText()  " + "chat" + jTextField1.getText());
             jTextArea1.setText(jTextArea1.getText() + "\n Me: " + jTextField1.getText());
             printWriter.flush();
             printWriter.close();
             socket.close();
 
         } catch (IOException ex) {
+            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InvalidKeyException ex) {
+            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalBlockSizeException ex) {
+            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (BadPaddingException ex) {
+            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NoSuchPaddingException ex) {
             Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_btnSendMsgActionPerformed
@@ -1026,13 +1067,8 @@ public class Frame extends javax.swing.JFrame {
         // TODO add your handling code here:
         Discovery discovery = new Discovery();
 //        System.out.println( deviceInfoList.get(0));
-        try {
-            discovery.start();
-            showDevicesList();
-
-        } catch (InterruptedException ex) {
-            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        discovery.start();
+        showDevicesList();
     }//GEN-LAST:event_jStartDiscoveryButtonActionPerformed
 
     private void jBtnConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBtnConnectActionPerformed
@@ -1047,6 +1083,7 @@ public class Frame extends javax.swing.JFrame {
             jLabel3.setText("connected with: " + deviceInfoList.get(indexList).getDeviceName());
             deviceIP = deviceInfoList.get(indexList).getIp();
             devicePort = deviceInfoList.get(indexList).getPort();
+            devicePublicKey = deviceInfoList.get(indexList).getPublicKey();
 
             /////////////////////  System.out.println(deviceIP + " aaa " + devicePort);
         }
@@ -1069,7 +1106,11 @@ public class Frame extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jButton1ActionPerformed
 
-    public static void main(String args[]) {
+    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField1ActionPerformed
+
+    public static void main(String args[]) throws NoSuchAlgorithmException {
 
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
@@ -1108,6 +1149,14 @@ public class Frame extends javax.swing.JFrame {
 
         //     SQLiteDB();
         try {
+            //  rsa.test();
+            rsa.generateKeys();
+
+            myPublicKey = rsa.publicKey;
+
+            myPublicKeyStr = rsa.publicKey2string();
+            ///     System.out.println("pppp " + p.toString());
+            System.out.println("mypأ♠♠kstr " + myPublicKey);
             // Create a server socket that the server will be listening with.
             serverSocket = new ServerSocket(0);
             myPort = "" + Frame.serverSocket.getLocalPort();
@@ -1122,55 +1171,63 @@ public class Frame extends javax.swing.JFrame {
             try {
                 // Wait for a client to connect and when they do create a socket to communicate with them.
                 socket = serverSocket.accept(); //accpt TCP connection
-                InetAddress clientAddress = socket.getInetAddress();
-                System.out.println("clientAddress " + clientAddress);
-                String clientAdressString = clientAddress.getHostAddress();
-                System.out.println("clientAdressString nam " + clientAdressString);
-                String hostname = "Unknown Device";
-                for (DeviceInfo dev : Frame.deviceInfoList) {
-                    if (clientAdressString.equals(dev.getIp())) {
-                        int index = Frame.deviceInfoList.indexOf(dev);
-                        DeviceInfo redev = Frame.deviceInfoList.remove(0);
-                        System.out.println("device ip " + dev.getIp());
-                        System.out.println("device name " + dev.getDeviceName());
+                //  InetAddress clientAddress = socket.getInetAddress();
+                //System.out.println("clientAddress " + clientAddress);
+//                String clientAdressString = clientAddress.getHostAddress();
+//                System.out.println("clientAdressString nam " + clientAdressString);
+//                String hostname = "Unknown Device";
+//                for (DeviceInfo dev : Frame.deviceInfoList) {
+//                    if (clientAdressString.equals(dev.getIp())) {
+//                        int index = Frame.deviceInfoList.indexOf(dev);
+//                        DeviceInfo redev = Frame.deviceInfoList.remove(0);
+//                        System.out.println("device ip " + dev.getIp());
+//                        System.out.println("device name " + dev.getDeviceName());
+//
+//                        hostname = dev.getDeviceName();
+//                        break;
+//                    }
+//                }
 
-                        hostname = dev.getDeviceName();
-                        break;
-                    }
+//                JFrame jFrame = new JFrame();
+//                int result = JOptionPane.showConfirmDialog(jFrame, hostname + ": Want to send you message\\file.");
+//
+//                if (result == 1) {
+//                    System.out.println("You pressed NO");
+//
+//                } else if (result != 0) {
+//                    System.out.println("You pressed Cancel");
+//
+//                } else {
+//                    System.out.println("You pressed Yes");
+                // Stream to receive data from the client through the socket.
+                stream = socket.getInputStream();
+
+                inputStreamReader = new InputStreamReader(stream);
+                dataInputStream = new DataInputStream(stream);
+                System.out.println("Stream " + stream.toString());
+                // Check if receive message or file
+                char[] action = new char[4];
+                for (int i = 0; i < 4; i++) {
+                    action[i] = (char) stream.read();
                 }
-
-                JFrame jFrame = new JFrame();
-                int result = JOptionPane.showConfirmDialog(jFrame, hostname + ": Want to send you message\\file.");
-
-                if (result == 1) {
-                    System.out.println("You pressed NO");
-
-                } else if (result != 0) {
-                    System.out.println("You pressed Cancel");
-
-                } else {
-                    System.out.println("You pressed Yes");
-
-                    // Stream to receive data from the client through the socket.
-                    stream = socket.getInputStream();
-                    inputStreamReader = new InputStreamReader(stream);
-                    dataInputStream = new DataInputStream(stream);
-
-                    // Check if receive message or file
-                    char[] action = new char[4];
-                    for (int i = 0; i < 4; i++) {
-                        action[i] = (char) stream.read();
+                String recivedType = checkRecived(action);
+                if ("Msg".equals(recivedType)) {
+                    try {
+                        //   System.out.println("recivedType = " + recivedType);
+                        readReceivedMsg(inputStreamReader, "host");
+                    } catch (InvalidKeyException ex) {
+                        Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IllegalBlockSizeException ex) {
+                        Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (BadPaddingException ex) {
+                        Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    String recivedType = checkRecived(action);
-                    if ("Msg".equals(recivedType)) {
-                        // System.out.println("recivedType = " + recivedType);
-                        readReceivedMsg(inputStreamReader, hostname);
 
-                    } else if ("file".equals(recivedType)) {
-                        // System.out.println("recivedType = " + recivedType);
-                        readReceivedFile(dataInputStream);
-                    }
+                } else if ("file".equals(recivedType)) {
+                    //  System.out.println("recivedType = " + recivedType);
+                    readReceivedFile(dataInputStream);
                 }
+//                }
             } catch (IOException ex) {
                 Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -1194,6 +1251,7 @@ public class Frame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel14;
+    private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel17;
     private javax.swing.JLabel jLabel2;
     static javax.swing.JLabel jLabel3;
