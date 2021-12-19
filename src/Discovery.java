@@ -69,7 +69,7 @@ class Register extends Thread {
         try {
             // Create a JmDNS instance
             JmDNS jmdns = JmDNS.create(InetAddress.getLocalHost());
-            System.out.println("k " + k);
+          //  System.out.println("k " + k);
             // Register a service
             Map<String, String> m = new HashMap<>();
             m.put("port", Frame.myPort);
@@ -82,7 +82,10 @@ class Register extends Thread {
             jmdns.registerService(serviceInfo);
 
             // Wait a bit
-            Thread.sleep(2000);
+            while(true){
+                Thread.sleep(2000);
+            }
+            
 
             // Unregister all services
             //   jmdns.unregisterAllServices();
@@ -119,7 +122,7 @@ class Listener extends Thread {
             System.out.println("Service removed: " + event.getInfo());
 
             String deviceName = event.getName();
-            System.out.println("deviceName " + deviceName);
+          //  System.out.println("deviceName " + deviceName);
             for (DeviceInfo dev : Frame.deviceInfoList) {
 
                 if (deviceName.equals(dev.getDeviceName())) {
@@ -135,26 +138,30 @@ class Listener extends Thread {
 
         @Override
         public void serviceResolved(ServiceEvent event) {
+           
             try {
                 System.out.println("Service resolved: " + event.getInfo());
                 
-                String deviceName = event.getName();
+               
+                
+                if (!(instantName.equals(event.getName()))) {
+        
+                     String deviceName = event.getName();
                 String ip = event.getInfo().getInetAddresses()[0].getHostAddress();
                 int port = Integer.valueOf((event.getInfo().getPropertyString("port")));
-                String devicePuplicKeyStr =  "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAjaNrSrSWx7n85EMExv879KxurswGM5cShEy2npJUq6Pj0Wj4W3ddMhPk3Pb+wKIBsgrR9/AB3i0k8ZRCEL1V1go4CcDH/R2Iad96HsSp01YjzgoYys58xKg+OHX5Qm/L5LLnC0q8R95S1BgrAF7hCyn5ONSfwxRoLt4V0087uZKiq1xCx3aVSs39h5wsSdmg/asYOU9128ZsavHIrd2nCBqwn2KjGN37Ngj0WJLlo70qiJlhuh4xQ+hV4XbNFvknx1o0bgGh3l3rFICHJiLbR8+S5A23a/Rr41KP4xda+cDH513LmzICGUND74eRlMCeUEMqXsv1mp2LENx7271lFwIDAQAB";
-                System.out.println("devicePuplicKeyStr "+devicePuplicKeyStr);
+              String devicePuplicKeyStr =  "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAjaNrSrSWx7n85EMExv879KxurswGM5cShEy2npJUq6Pj0Wj4W3ddMhPk3Pb+wKIBsgrR9/AB3i0k8ZRCEL1V1go4CcDH/R2Iad96HsSp01YjzgoYys58xKg+OHX5Qm/L5LLnC0q8R95S1BgrAF7hCyn5ONSfwxRoLt4V0087uZKiq1xCx3aVSs39h5wsSdmg/asYOU9128ZsavHIrd2nCBqwn2KjGN37Ngj0WJLlo70qiJlhuh4xQ+hV4XbNFvknx1o0bgGh3l3rFICHJiLbR8+S5A23a/Rr41KP4xda+cDH513LmzICGUND74eRlMCeUEMqXsv1mp2LENx7271lFwIDAQAB";
+               // System.out.println("devicePuplicKeyStr "+devicePuplicKeyStr);
                 
                 PublicKey devicePublicKey = Frame.rsa.hostStrkey2PublicKey(devicePuplicKeyStr);
                 
-                System.out.println("devicePublicKey:  " + devicePublicKey);
+               // System.out.println("devicePublicKey:  " + devicePublicKey);
                 
                    DeviceInfo device = new DeviceInfo(deviceName, ip, port,devicePublicKey);
                   Frame.deviceInfoList.add(device);
-                Frame.showDevicesList();
-                
-                if (!(instantName.equals(event.getName()))) {
+           
                     
                 }
+                     Frame.showDevicesList();
             } catch (InvalidKeySpecException ex) {
                 Logger.getLogger(Listener.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -170,7 +177,10 @@ class Listener extends Thread {
             jmdns.addServiceListener("_aaya._tcp.local.", new SampleListener());
 
             // Wait a bit
-            Thread.sleep(1);
+            while(true){
+                   Thread.sleep(10000);
+            }
+         
         } catch (UnknownHostException e) {
             System.out.println(e.getMessage());
         } catch (IOException e) {

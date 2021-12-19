@@ -17,16 +17,17 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
@@ -63,28 +64,42 @@ public class Frame extends javax.swing.JFrame {
     static JList list = new JList();
     static ArrayList<DeviceInfo> deviceInfoList = new ArrayList<>();
     static int originalSize = deviceInfoList.size();
-    static String deviceIP;
-    static int devicePort;
+    static String deviceIP = "192.168.1.1";
+    static int devicePort = 8080;
     static PublicKey devicePublicKey;
     static String myPort;
+    static String myIp;
     static PublicKey myPublicKey;
     static String myPublicKeyStr;
+    static String myDeviceName;
 
     static RSA rsa = new RSA();
 
-
-    /*   public static void SQLiteDB() {
+    /*
+       public static void SQLiteDB() {
         Connection connection = null;
 
+         // SQL statement for creating a new table
+        String sql = "CREATE TABLE IF NOT EXISTS User (\n"
+                + "	id integer PRIMARY KEY,\n"
+                + "	name text NOT NULL,\n"
+                + "	port int,\n"
+                + "	ip string\n"
+                + ");";
+        
         try {
             // Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:/D:\\sqlite\\sqlite-tools-win32-x86-3370000\\sqliteDB");
+            connection = DriverManager.getConnection("jdbc:sqlite:.\\sqliteDB");
+            Statement statement = connection.createStatement();
+            statement.execute(sql);
+            
         } catch (Exception e) {
             System.err.println(e.getClass().getName() + ": " + e.getMessage());
             System.exit(0);
         }
         System.out.println("Opened database successfully");
-    }*/
+    }
+     */
     public static MouseListener getMyMouseListener() {
         return new MouseListener() {
             @Override
@@ -358,13 +373,14 @@ public class Frame extends javax.swing.JFrame {
         try {
             bufferedReader = new BufferedReader(inputStreamReader);
             String encMessage = bufferedReader.readLine();
-         //   byte[] mes = encMessage.getBytes();
+            //   byte[] mes = encMessage.getBytes();
 
-         //  message = rsa.decMessage(rsa.privateKey, mes);
+            //  message = rsa.decMessage(rsa.privateKey, mes);
             System.out.println(encMessage);
             if (jTextArea1.getText().equals("")) {
                 jTextArea1.setText("Sender: " + encMessage);
             } else {
+
                 jTextArea1.setText(jTextArea1.getText() + "\n Sender (" + sendername + "): " + encMessage);
             }
         } catch (IOException ex) {
@@ -421,12 +437,21 @@ public class Frame extends javax.swing.JFrame {
         jSideReceivePanel = new javax.swing.JPanel();
         jLabel11 = new javax.swing.JLabel();
         jLabel12 = new javax.swing.JLabel();
+        jSideReceivePanel1 = new javax.swing.JPanel();
+        jLabel16 = new javax.swing.JLabel();
+        jLabel18 = new javax.swing.JLabel();
         jsideChatPanel = new javax.swing.JPanel();
         jLabel7 = new javax.swing.JLabel();
         jLabel8 = new javax.swing.JLabel();
         jSideSendFilePanel = new javax.swing.JPanel();
         jLabel9 = new javax.swing.JLabel();
         jLabel10 = new javax.swing.JLabel();
+        jSideQRcode = new javax.swing.JPanel();
+        jLabel19 = new javax.swing.JLabel();
+        jLabel20 = new javax.swing.JLabel();
+        jSideReceivePanel3 = new javax.swing.JPanel();
+        jLabel21 = new javax.swing.JLabel();
+        jLabel22 = new javax.swing.JLabel();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         jHomePanel = new javax.swing.JPanel();
         jpFileRow = new javax.swing.JPanel();
@@ -455,7 +480,10 @@ public class Frame extends javax.swing.JFrame {
         jScrollPane2 = new javax.swing.JScrollPane();
         jPaneln = new javax.swing.JPanel();
         jButton1 = new javax.swing.JButton();
+        javax.swing.JPanel jQRcodePanel = new javax.swing.JPanel();
         jLabel15 = new javax.swing.JLabel();
+        jLQRcode = new javax.swing.JLabel();
+        jButton2 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Line for sharing");
@@ -548,7 +576,32 @@ public class Frame extends javax.swing.JFrame {
         jLabel12.setText("Receive File");
         jSideReceivePanel.add(jLabel12, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 11, 116, -1));
 
-        jSidePanel.add(jSideReceivePanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 293, 250, 50));
+        jSideReceivePanel1.setBackground(new java.awt.Color(51, 0, 51));
+        jSideReceivePanel1.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jSideReceivePanel1.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jSideReceivePanel1MouseClicked(evt);
+            }
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                jSideReceivePanel1MouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                jSideReceivePanel1MouseExited(evt);
+            }
+        });
+        jSideReceivePanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jLabel16.setIcon(new javax.swing.ImageIcon(getClass().getResource("/DataTransfareImages/icons8_download_20px.png"))); // NOI18N
+        jSideReceivePanel1.add(jLabel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(14, 15, -1, -1));
+
+        jLabel18.setFont(new java.awt.Font("Serif", 1, 18)); // NOI18N
+        jLabel18.setForeground(new java.awt.Color(204, 204, 204));
+        jLabel18.setText("Receive File");
+        jSideReceivePanel1.add(jLabel18, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 11, 116, -1));
+
+        jSideReceivePanel.add(jSideReceivePanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 293, 250, 50));
+
+        jSidePanel.add(jSideReceivePanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 300, 250, 50));
 
         jsideChatPanel.setBackground(new java.awt.Color(51, 0, 51));
         jsideChatPanel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -600,6 +653,56 @@ public class Frame extends javax.swing.JFrame {
 
         jSidePanel.add(jSideSendFilePanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 241, 250, 50));
 
+        jSideQRcode.setBackground(new java.awt.Color(51, 0, 51));
+        jSideQRcode.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jSideQRcode.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jSideQRcodeMouseClicked(evt);
+            }
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                jSideQRcodeMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                jSideQRcodeMouseExited(evt);
+            }
+        });
+        jSideQRcode.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jLabel19.setIcon(new javax.swing.ImageIcon(getClass().getResource("/DataTransfareImages/icons8_qr_code_26px.png"))); // NOI18N
+        jSideQRcode.add(jLabel19, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 15, 20, 20));
+
+        jLabel20.setFont(new java.awt.Font("Serif", 1, 18)); // NOI18N
+        jLabel20.setForeground(new java.awt.Color(204, 204, 204));
+        jLabel20.setText("QR code ");
+        jSideQRcode.add(jLabel20, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 11, 116, -1));
+
+        jSideReceivePanel3.setBackground(new java.awt.Color(51, 0, 51));
+        jSideReceivePanel3.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jSideReceivePanel3.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jSideReceivePanel3MouseClicked(evt);
+            }
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                jSideReceivePanel3MouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                jSideReceivePanel3MouseExited(evt);
+            }
+        });
+        jSideReceivePanel3.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jLabel21.setIcon(new javax.swing.ImageIcon(getClass().getResource("/DataTransfareImages/icons8_download_20px.png"))); // NOI18N
+        jSideReceivePanel3.add(jLabel21, new org.netbeans.lib.awtextra.AbsoluteConstraints(14, 15, -1, -1));
+
+        jLabel22.setFont(new java.awt.Font("Serif", 1, 18)); // NOI18N
+        jLabel22.setForeground(new java.awt.Color(204, 204, 204));
+        jLabel22.setText("Receive File");
+        jSideReceivePanel3.add(jLabel22, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 11, 116, -1));
+
+        jSideQRcode.add(jSideReceivePanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 293, 250, 50));
+
+        jSidePanel.add(jSideQRcode, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 350, -1, 50));
+
         jTabbedPane1.setBackground(new java.awt.Color(255, 255, 255));
 
         jHomePanel.setBackground(new java.awt.Color(255, 255, 255));
@@ -643,6 +746,11 @@ public class Frame extends javax.swing.JFrame {
 
         jtfDeviceName.setToolTipText("Hello");
         jtfDeviceName.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(229, 213, 229)));
+        jtfDeviceName.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jtfDeviceNameActionPerformed(evt);
+            }
+        });
         jHomePanel.add(jtfDeviceName, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 290, 1050, 40));
 
         jBtnConnect.setFont(new java.awt.Font("Serif", 1, 14)); // NOI18N
@@ -756,7 +864,7 @@ public class Frame extends javax.swing.JFrame {
                     .addComponent(jlFileName1, javax.swing.GroupLayout.PREFERRED_SIZE, 712, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnSelectFile, javax.swing.GroupLayout.DEFAULT_SIZE, 1042, Short.MAX_VALUE)
                     .addComponent(btnSendFile, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(649, Short.MAX_VALUE))
+                .addContainerGap(688, Short.MAX_VALUE))
         );
         jSendFilePanelLayout.setVerticalGroup(
             jSendFilePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -797,8 +905,6 @@ public class Frame extends javax.swing.JFrame {
             }
         });
 
-        jLabel15.setText("jLabel15");
-
         javax.swing.GroupLayout jReceivedFilesPanelLayout = new javax.swing.GroupLayout(jReceivedFilesPanel);
         jReceivedFilesPanel.setLayout(jReceivedFilesPanelLayout);
         jReceivedFilesPanelLayout.setHorizontalGroup(
@@ -806,11 +912,10 @@ public class Frame extends javax.swing.JFrame {
             .addGroup(jReceivedFilesPanelLayout.createSequentialGroup()
                 .addGap(26, 26, 26)
                 .addGroup(jReceivedFilesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 603, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLRecived1)
                     .addComponent(jScrollPane2)
                     .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, 1025, Short.MAX_VALUE))
-                .addContainerGap(665, Short.MAX_VALUE))
+                .addContainerGap(704, Short.MAX_VALUE))
         );
         jReceivedFilesPanelLayout.setVerticalGroup(
             jReceivedFilesPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -818,15 +923,60 @@ public class Frame extends javax.swing.JFrame {
                 .addGap(110, 110, 110)
                 .addComponent(jLRecived1, javax.swing.GroupLayout.PREFERRED_SIZE, 58, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 346, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 392, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(524, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("tab4", jReceivedFilesPanel);
+
+        jQRcodePanel.setBackground(new java.awt.Color(255, 255, 255));
+
+        jLabel15.setBackground(new java.awt.Color(255, 255, 255));
+        jLabel15.setFont(new java.awt.Font("Serif", 1, 24)); // NOI18N
+        jLabel15.setForeground(new java.awt.Color(102, 0, 102));
+        jLabel15.setText("My Device QR code:");
+        jLabel15.setToolTipText("");
+
+        jLQRcode.setBackground(new java.awt.Color(204, 255, 51));
+
+        jButton2.setFont(new java.awt.Font("Serif", 1, 14)); // NOI18N
+        jButton2.setForeground(new java.awt.Color(102, 0, 102));
+        jButton2.setText("Get my QR code");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jQRcodePanelLayout = new javax.swing.GroupLayout(jQRcodePanel);
+        jQRcodePanel.setLayout(jQRcodePanelLayout);
+        jQRcodePanelLayout.setHorizontalGroup(
+            jQRcodePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jQRcodePanelLayout.createSequentialGroup()
+                .addGap(32, 32, 32)
+                .addGroup(jQRcodePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 395, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jQRcodePanelLayout.createSequentialGroup()
+                        .addGap(165, 165, 165)
+                        .addComponent(jLQRcode, javax.swing.GroupLayout.PREFERRED_SIZE, 387, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 910, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(813, Short.MAX_VALUE))
+        );
+        jQRcodePanelLayout.setVerticalGroup(
+            jQRcodePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jQRcodePanelLayout.createSequentialGroup()
+                .addGap(126, 126, 126)
+                .addComponent(jLabel15, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(47, 47, 47)
+                .addComponent(jLQRcode, javax.swing.GroupLayout.PREFERRED_SIZE, 224, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(646, Short.MAX_VALUE))
+        );
+
+        jTabbedPane1.addTab("tab5", jQRcodePanel);
 
         jContentPane.setLayer(jPanel2, javax.swing.JLayeredPane.DEFAULT_LAYER);
         jContentPane.setLayer(jSidePanel, javax.swing.JLayeredPane.DEFAULT_LAYER);
@@ -1033,34 +1183,27 @@ public class Frame extends javax.swing.JFrame {
     }//GEN-LAST:event_jIntroPanelMouseClicked
 
     private void btnSendMsgActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSendMsgActionPerformed
+
         try {
+
             // TODO add your handling code here:
             Socket socket = new Socket(deviceIP, devicePort);
             String message = jTextField1.getText();
-            String encodedMessage = rsa.encMessage(message, devicePublicKey);
+            //    String encodedMessage = rsa.encMessage(message, devicePublicKey);
             PrintWriter printWriter = new PrintWriter(socket.getOutputStream());
-            printWriter.write("chat" + encodedMessage);
+            printWriter.write("chat" + message);
 
-            System.out.println("chat !!♠" + jTextField1.getText());
-            System.out.println("\"chat\" + jTextField1.getText()  " + "chat" + jTextField1.getText());
+            System.out.println("chat" + jTextField1.getText());
+       
             jTextArea1.setText(jTextArea1.getText() + "\n Me: " + jTextField1.getText());
             printWriter.flush();
             printWriter.close();
             socket.close();
-
         } catch (IOException ex) {
             Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (NoSuchAlgorithmException ex) {
-            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InvalidKeyException ex) {
-            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalBlockSizeException ex) {
-            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (BadPaddingException ex) {
-            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (NoSuchPaddingException ex) {
-            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         }
+
+
     }//GEN-LAST:event_btnSendMsgActionPerformed
 
     private void jStartDiscoveryButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jStartDiscoveryButtonActionPerformed
@@ -1069,6 +1212,7 @@ public class Frame extends javax.swing.JFrame {
 //        System.out.println( deviceInfoList.get(0));
         discovery.start();
         showDevicesList();
+        jStartDiscoveryButton.setEnabled(false);
     }//GEN-LAST:event_jStartDiscoveryButtonActionPerformed
 
     private void jBtnConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBtnConnectActionPerformed
@@ -1110,6 +1254,69 @@ public class Frame extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField1ActionPerformed
 
+    private void jSideReceivePanel1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideReceivePanel1MouseClicked
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jSideReceivePanel1MouseClicked
+
+    private void jSideReceivePanel1MouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideReceivePanel1MouseEntered
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jSideReceivePanel1MouseEntered
+
+    private void jSideReceivePanel1MouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideReceivePanel1MouseExited
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jSideReceivePanel1MouseExited
+
+    private void jSideReceivePanel3MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideReceivePanel3MouseClicked
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jSideReceivePanel3MouseClicked
+
+    private void jSideReceivePanel3MouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideReceivePanel3MouseEntered
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jSideReceivePanel3MouseEntered
+
+    private void jSideReceivePanel3MouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideReceivePanel3MouseExited
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jSideReceivePanel3MouseExited
+
+    private void jSideQRcodeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideQRcodeMouseClicked
+        // TODO add your handling code here:
+        Color color = new Color(100, 61, 100);
+        jSideQRcode.setBackground(color);
+        jTabbedPane1.setSelectedIndex(4);
+        jLPageName.setText("QR code");
+
+    }//GEN-LAST:event_jSideQRcodeMouseClicked
+
+    private void jSideQRcodeMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideQRcodeMouseEntered
+        // TODO add your handling code here:
+        Color color = new Color(55, 20, 55);
+        jSideQRcode.setBackground(color);
+    }//GEN-LAST:event_jSideQRcodeMouseEntered
+
+    private void jSideQRcodeMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jSideQRcodeMouseExited
+        // TODO add your handling code here:
+        Color color = new Color(51, 0, 51);
+        jSideQRcode.setBackground(color);
+    }//GEN-LAST:event_jSideQRcodeMouseExited
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        try {
+            // TODO add your handling code here:
+            myDeviceName = jtfDeviceName.getText();
+            String qrString = myDeviceName + " " + myIp + " " + myPort;
+          //  System.out.println("qrString " + qrString);
+            QrGenerator.generate(qrString);
+        } catch (IOException ex) {
+            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        jButton2.setEnabled(false);
+    }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jtfDeviceNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jtfDeviceNameActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jtfDeviceNameActionPerformed
+
     public static void main(String args[]) throws NoSuchAlgorithmException {
 
         /* Set the Nimbus look and feel */
@@ -1140,14 +1347,14 @@ public class Frame extends javax.swing.JFrame {
             public void run() {
 
                 Frame frame = new Frame();
-                ImageIcon img = new ImageIcon("..\\DataTransfare\\src\\DataTransfareImages\\line0.png");
+                ImageIcon img = new ImageIcon(".\\DataTransfareImages\\line0.png");
                 frame.setIconImage(img.getImage());
                 jContentPane.setVisible(false);
                 frame.setVisible(true);
             }
         });
 
-        //     SQLiteDB();
+        //  SqliteDB.getConnection();
         try {
             //  rsa.test();
             rsa.generateKeys();
@@ -1156,12 +1363,14 @@ public class Frame extends javax.swing.JFrame {
 
             myPublicKeyStr = rsa.publicKey2string();
             ///     System.out.println("pppp " + p.toString());
-            System.out.println("mypأ♠♠kstr " + myPublicKey);
+            //     System.out.println("mypkstr " + myPublicKey);
             // Create a server socket that the server will be listening with.
+
             serverSocket = new ServerSocket(0);
             myPort = "" + Frame.serverSocket.getLocalPort();
-            System.out.println("listening on port: " + serverSocket.getLocalPort());
-
+            myIp = InetAddress.getLocalHost().getHostAddress();
+            //   System.out.println("IP of my system is := " + myIp);
+            Operation.insertData(myDeviceName, Frame.serverSocket.getLocalPort(), myIp);
         } catch (IOException ex) {
             Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -1169,69 +1378,71 @@ public class Frame extends javax.swing.JFrame {
         while (true) {
 
             try {
+             
                 // Wait for a client to connect and when they do create a socket to communicate with them.
                 socket = serverSocket.accept(); //accpt TCP connection
-                //  InetAddress clientAddress = socket.getInetAddress();
-                //System.out.println("clientAddress " + clientAddress);
-//                String clientAdressString = clientAddress.getHostAddress();
-//                System.out.println("clientAdressString nam " + clientAdressString);
-//                String hostname = "Unknown Device";
-//                for (DeviceInfo dev : Frame.deviceInfoList) {
-//                    if (clientAdressString.equals(dev.getIp())) {
-//                        int index = Frame.deviceInfoList.indexOf(dev);
-//                        DeviceInfo redev = Frame.deviceInfoList.remove(0);
-//                        System.out.println("device ip " + dev.getIp());
-//                        System.out.println("device name " + dev.getDeviceName());
-//
-//                        hostname = dev.getDeviceName();
-//                        break;
-//                    }
-//                }
+                InetAddress clientAddress = socket.getInetAddress();
+                System.out.println("clientAddress " + clientAddress);
+                String clientAdressString = clientAddress.getHostAddress();
+                System.out.println("clientAdressString nam " + clientAdressString);
+                String hostname = "host";
+                for (DeviceInfo dev : Frame.deviceInfoList) {
+                    if (clientAdressString.equals(dev.getIp())) {
+                        int index = Frame.deviceInfoList.indexOf(dev);
+                        DeviceInfo redev = Frame.deviceInfoList.remove(0);
+                        System.out.println("device ip " + dev.getIp());
+                        System.out.println("device name " + dev.getDeviceName());
 
-//                JFrame jFrame = new JFrame();
-//                int result = JOptionPane.showConfirmDialog(jFrame, hostname + ": Want to send you message\\file.");
-//
-//                if (result == 1) {
-//                    System.out.println("You pressed NO");
-//
-//                } else if (result != 0) {
-//                    System.out.println("You pressed Cancel");
-//
-//                } else {
-//                    System.out.println("You pressed Yes");
-                // Stream to receive data from the client through the socket.
-                stream = socket.getInputStream();
-
-                inputStreamReader = new InputStreamReader(stream);
-                dataInputStream = new DataInputStream(stream);
-                System.out.println("Stream " + stream.toString());
-                // Check if receive message or file
-                char[] action = new char[4];
-                for (int i = 0; i < 4; i++) {
-                    action[i] = (char) stream.read();
-                }
-                String recivedType = checkRecived(action);
-                if ("Msg".equals(recivedType)) {
-                    try {
-                        //   System.out.println("recivedType = " + recivedType);
-                        readReceivedMsg(inputStreamReader, "host");
-                    } catch (InvalidKeyException ex) {
-                        Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (IllegalBlockSizeException ex) {
-                        Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (BadPaddingException ex) {
-                        Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+                        hostname = dev.getDeviceName();
+                        break;
                     }
-
-                } else if ("file".equals(recivedType)) {
-                    //  System.out.println("recivedType = " + recivedType);
-                    readReceivedFile(dataInputStream);
                 }
-//                }
+
+                JFrame jFrame = new JFrame();
+                int result = JOptionPane.showConfirmDialog(jFrame, hostname + ": Want to send you message\\file.");
+
+                if (result == 1) {
+                    System.out.println("You pressed NO");
+
+                } else if (result != 0) {
+                    System.out.println("You pressed Cancel");
+
+                } else {
+                    System.out.println("You pressed Yes");
+                    // Stream to receive data from the client through the socket.
+                    stream = socket.getInputStream();
+
+                    inputStreamReader = new InputStreamReader(stream);
+                    dataInputStream = new DataInputStream(stream);
+                    System.out.println("Stream " + stream.toString());
+                    // Check if receive message or file
+                    char[] action = new char[4];
+                    for (int i = 0; i < 4; i++) {
+                        action[i] = (char) stream.read();
+                    }
+                    String recivedType = checkRecived(action);
+                    if ("Msg".equals(recivedType)) {
+                        try {
+                            //   System.out.println("recivedType = " + recivedType);
+                            readReceivedMsg(inputStreamReader, hostname);
+                        } catch (InvalidKeyException ex) {
+                            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+                        } catch (IllegalBlockSizeException ex) {
+                            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+                        } catch (BadPaddingException ex) {
+                            Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+
+                    } else if ("file".equals(recivedType)) {
+                        //  System.out.println("recivedType = " + recivedType);
+                        readReceivedFile(dataInputStream);
+                    }
+                }
             } catch (IOException ex) {
                 Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -1240,10 +1451,12 @@ public class Frame extends javax.swing.JFrame {
     private javax.swing.JButton btnSendMsg;
     private javax.swing.JButton jBtnConnect;
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
     private static javax.swing.JLayeredPane jContentPane;
     public javax.swing.JPanel jHomePanel;
     private javax.swing.JPanel jIntroPanel;
     private javax.swing.JLabel jLPageName;
+    public static javax.swing.JLabel jLQRcode;
     private javax.swing.JLabel jLRecived1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
@@ -1252,8 +1465,14 @@ public class Frame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel14;
     private javax.swing.JLabel jLabel15;
+    private javax.swing.JLabel jLabel16;
     private javax.swing.JLabel jLabel17;
+    private javax.swing.JLabel jLabel18;
+    private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel20;
+    private javax.swing.JLabel jLabel21;
+    private javax.swing.JLabel jLabel22;
     static javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
@@ -1272,7 +1491,10 @@ public class Frame extends javax.swing.JFrame {
     private javax.swing.JSeparator jSeparator2;
     private javax.swing.JPanel jSideHomePanel;
     private javax.swing.JPanel jSidePanel;
+    private static javax.swing.JPanel jSideQRcode;
     private javax.swing.JPanel jSideReceivePanel;
+    private javax.swing.JPanel jSideReceivePanel1;
+    private javax.swing.JPanel jSideReceivePanel3;
     private javax.swing.JPanel jSideSendFilePanel;
     private javax.swing.JButton jStartDiscoveryButton;
     private javax.swing.JTabbedPane jTabbedPane1;

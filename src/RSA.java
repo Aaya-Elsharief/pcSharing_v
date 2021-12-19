@@ -97,7 +97,7 @@ public class RSA {
         try (FileOutputStream fos = new FileOutputStream("public.key")) {
             fos.write(publicKey.getEncoded());
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(Sec.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(RSA.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         File publicKeyFile = new File("public.key");
@@ -107,8 +107,9 @@ public class RSA {
         EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(publicKeyBytes);
         try {
             keyFactory.generatePublic(publicKeySpec);
-        } catch (InvalidKeySpecException ex) {
-            Logger.getLogger(Sec.class.getName()).log(Level.SEVERE, null, ex);
+      
+    }   catch (InvalidKeySpecException ex) {
+            Logger.getLogger(RSA.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -134,11 +135,11 @@ public class RSA {
             byte[] decryptedMessageBytes = decryptCipher.doFinal(encryptedMessageBytes);
             decryptedMessage = new String(decryptedMessageBytes, StandardCharsets.UTF_8);
 
-            System.out.println("decryptedMessage: " + decryptedMessage);
+          //  System.out.println("decryptedMessage: " + decryptedMessage);
         } catch (NoSuchAlgorithmException ex) {
-            Logger.getLogger(Sec.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(RSA.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NoSuchPaddingException ex) {
-            Logger.getLogger(Sec.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(RSA.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         return decryptedMessage;
@@ -179,13 +180,13 @@ public class RSA {
 
 //converting public key to byte            
         byte[] byte_pubkey = publicKey.getEncoded();
-        System.out.println("\nBYTE KEY::: " + byte_pubkey);
+     //   System.out.println("\nBYTE KEY::: " + byte_pubkey);
 
 //converting byte to String 
         String str_key = Base64.getEncoder().encodeToString(byte_pubkey);
 
 // String str_key = new String(byte_pubkey,Charset.);
-        System.out.println("\nSTRING KEY::" + str_key);
+     //   System.out.println("\nSTRING KEY::" + str_key);
 
         return str_key;
 
