@@ -64,8 +64,8 @@ public class Frame extends javax.swing.JFrame {
     static JList list = new JList();
     static ArrayList<DeviceInfo> deviceInfoList = new ArrayList<>();
     static int originalSize = deviceInfoList.size();
-    static String deviceIP = "192.168.1.1";
-    static int devicePort = 8080;
+    static String deviceIP;
+    static int devicePort;
     static PublicKey devicePublicKey;
     static String myPort;
     static String myIp;
@@ -1194,7 +1194,7 @@ public class Frame extends javax.swing.JFrame {
             printWriter.write("chat" + message);
 
             System.out.println("chat" + jTextField1.getText());
-       
+
             jTextArea1.setText(jTextArea1.getText() + "\n Me: " + jTextField1.getText());
             printWriter.flush();
             printWriter.close();
@@ -1303,8 +1303,24 @@ public class Frame extends javax.swing.JFrame {
         try {
             // TODO add your handling code here:
             myDeviceName = jtfDeviceName.getText();
+            //  System.out.println("myDeviceName(" + myDeviceName + ")");
+            if (myDeviceName.equals("")) {
+                myDeviceName = "Device";
+            }
+
             String qrString = myDeviceName + " " + myIp + " " + myPort;
-          //  System.out.println("qrString " + qrString);
+
+            String s = qrString;
+            String[] arrOfStr = s.split(" ");
+            System.out.println("myDeviceName♣" + arrOfStr[0]);
+            System.out.println("myIp♣" + arrOfStr[1]);
+            System.out.println("myPort♣" + arrOfStr[2]);
+
+            for (String a : arrOfStr) {
+                System.out.println(a);
+            }
+
+            //  System.out.println("qrString " + qrString);
             QrGenerator.generate(qrString);
         } catch (IOException ex) {
             Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
@@ -1378,7 +1394,7 @@ public class Frame extends javax.swing.JFrame {
         while (true) {
 
             try {
-             
+
                 // Wait for a client to connect and when they do create a socket to communicate with them.
                 socket = serverSocket.accept(); //accpt TCP connection
                 InetAddress clientAddress = socket.getInetAddress();

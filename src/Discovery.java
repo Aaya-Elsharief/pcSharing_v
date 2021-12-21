@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public class Discovery {
 
     public static void start() {
-        System.out.println(Frame.myPublicKeyStr);
+//        System.out.println(Frame.myPublicKeyStr);
         Frame.jLabel3.setText("Discovery get started... ");
         String instantName = Frame.jtfDeviceName.getText();
         Listener app = new Listener();
