@@ -11,16 +11,21 @@
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
 import javax.jmdns.ServiceInfo;
 import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceEvent;
 import javax.jmdns.ServiceListener;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Discovery {
 
-    public static void start() throws InterruptedException {
+    public static void start() {
+//        System.out.println(Frame.myPublicKeyStr);
         Frame.jLabel3.setText("Discovery get started... ");
         String instantName = Frame.jtfDeviceName.getText();
         Listener app = new Listener();
@@ -44,11 +49,14 @@ public class Discovery {
 class Register extends Thread {
 
     static String instantName = Frame.jtfDeviceName.getText();
+    static String k = Frame.myPublicKeyStr;
 
 //    public static void setInstantName(String instantName) {
 //        Register.instantName = instantName;
 //    }
+    @Override
     public void run() {
+
         try {
             amain();
         } catch (Exception e) {
@@ -61,10 +69,12 @@ class Register extends Thread {
         try {
             // Create a JmDNS instance
             JmDNS jmdns = JmDNS.create(InetAddress.getLocalHost());
-
+          //  System.out.println("k " + k);
             // Register a service
-            Map<String, String> m = new HashMap<String, String>();
+            Map<String, String> m = new HashMap<>();
             m.put("port", Frame.myPort);
+            m.put("publicKey", "MIIBIjANBgkqhkiGAB/yKuCamd1QbRYYBLqFnYuehjsyOJKVNHllGP/WJrgW1vXNf1sgWU5o+wIDAQAB\n" +
+"");
 
             //final String type, final String name, final int port, final String text
             //final String type, final String name, final int port, final int weight, final int priority, final Map<String, ?> props
@@ -72,7 +82,10 @@ class Register extends Thread {
             jmdns.registerService(serviceInfo);
 
             // Wait a bit
-            Thread.sleep(2000);
+            while(true){
+                Thread.sleep(2000);
+            }
+            
 
             // Unregister all services
             //   jmdns.unregisterAllServices();
@@ -109,7 +122,7 @@ class Listener extends Thread {
             System.out.println("Service removed: " + event.getInfo());
 
             String deviceName = event.getName();
-            System.out.println("deviceName " + deviceName);
+          //  System.out.println("deviceName " + deviceName);
             for (DeviceInfo dev : Frame.deviceInfoList) {
 
                 if (deviceName.equals(dev.getDeviceName())) {
@@ -125,19 +138,32 @@ class Listener extends Thread {
 
         @Override
         public void serviceResolved(ServiceEvent event) {
-            System.out.println("Service resolved: " + event.getInfo());
-
-                  String deviceName = event.getName();
+           
+            try {
+                System.out.println("Service resolved: " + event.getInfo());
+                
+               
+                
+                if (!(instantName.equals(event.getName()))) {
+        
+                     String deviceName = event.getName();
                 String ip = event.getInfo().getInetAddresses()[0].getHostAddress();
                 int port = Integer.valueOf((event.getInfo().getPropertyString("port")));
-                DeviceInfo device = new DeviceInfo(deviceName, ip, port);
-                Frame.deviceInfoList.add(device);
-                Frame.showDevicesList();
+              String devicePuplicKeyStr =  "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAjaNrSrSWx7n85EMExv879KxurswGM5cShEy2npJUq6Pj0Wj4W3ddMhPk3Pb+wKIBsgrR9/AB3i0k8ZRCEL1V1go4CcDH/R2Iad96HsSp01YjzgoYys58xKg+OHX5Qm/L5LLnC0q8R95S1BgrAF7hCyn5ONSfwxRoLt4V0087uZKiq1xCx3aVSs39h5wsSdmg/asYOU9128ZsavHIrd2nCBqwn2KjGN37Ngj0WJLlo70qiJlhuh4xQ+hV4XbNFvknx1o0bgGh3l3rFICHJiLbR8+S5A23a/Rr41KP4xda+cDH513LmzICGUND74eRlMCeUEMqXsv1mp2LENx7271lFwIDAQAB";
+               // System.out.println("devicePuplicKeyStr "+devicePuplicKeyStr);
                 
-            if (!(instantName.equals(event.getName()))) {
-
-          
-
+                PublicKey devicePublicKey = Frame.rsa.hostStrkey2PublicKey(devicePuplicKeyStr);
+                
+               // System.out.println("devicePublicKey:  " + devicePublicKey);
+                
+                   DeviceInfo device = new DeviceInfo(deviceName, ip, port,devicePublicKey);
+                  Frame.deviceInfoList.add(device);
+           
+                    
+                }
+                     Frame.showDevicesList();
+            } catch (InvalidKeySpecException ex) {
+                Logger.getLogger(Listener.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -151,7 +177,10 @@ class Listener extends Thread {
             jmdns.addServiceListener("_aaya._tcp.local.", new SampleListener());
 
             // Wait a bit
-            Thread.sleep(1);
+            while(true){
+                   Thread.sleep(10000);
+            }
+         
         } catch (UnknownHostException e) {
             System.out.println(e.getMessage());
         } catch (IOException e) {
