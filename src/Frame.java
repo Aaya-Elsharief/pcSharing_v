@@ -1307,15 +1307,11 @@ public class Frame extends javax.swing.JFrame {
             if (myDeviceName.equals("")) {
                 myDeviceName = "Device";
             }
-
             String qrString = myDeviceName + " " + myIp + " " + myPort;
 
             String s = qrString;
             String[] arrOfStr = s.split(" ");
-            System.out.println("myDeviceName♣" + arrOfStr[0]);
-            System.out.println("myIp♣" + arrOfStr[1]);
-            System.out.println("myPort♣" + arrOfStr[2]);
-
+           
             for (String a : arrOfStr) {
                 System.out.println(a);
             }
@@ -1326,7 +1322,7 @@ public class Frame extends javax.swing.JFrame {
             Logger.getLogger(Frame.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        jButton2.setEnabled(false);
+      //  jButton2.setEnabled(false);
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void jtfDeviceNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jtfDeviceNameActionPerformed
@@ -1427,7 +1423,6 @@ public class Frame extends javax.swing.JFrame {
                     System.out.println("You pressed Yes");
                     // Stream to receive data from the client through the socket.
                     stream = socket.getInputStream();
-
                     inputStreamReader = new InputStreamReader(stream);
                     dataInputStream = new DataInputStream(stream);
                     System.out.println("Stream " + stream.toString());

@@ -31,29 +31,18 @@ public class QrGenerator {
             String QrCodeData = qrString;
             String filePath = ".\\Qr.png";
             String charset = "UTF-8";
-            
+
             Map<EncodeHintType, ErrorCorrectionLevel> hintMap = new HashMap<EncodeHintType, ErrorCorrectionLevel>();
             hintMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
             BitMatrix matrix = new MultiFormatWriter().encode(
                     new String(QrCodeData.getBytes(charset), charset),
                     BarcodeFormat.QR_CODE, 200, 200, hintMap);
-            
-             MatrixToImageWriter.writeToFile(matrix, filePath.substring(filePath.lastIndexOf('.')+1),new File(filePath));
-        System.out.println("Qr code has been generated at the location "+filePath);
-            
-        ImageIcon icon = new ImageIcon(".\\Qr.png");
-        Frame.jLQRcode.setIcon(icon);
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+
+            MatrixToImageWriter.writeToFile(matrix, filePath.substring(filePath.lastIndexOf('.') + 1), new File(filePath));
+            System.out.println("Qr code has been generated at the location " + filePath);
+
+            ImageIcon icon = new ImageIcon(".\\Qr.png");
+            Frame.jLQRcode.setIcon(icon);
         } catch (WriterException ex) {
             Logger.getLogger(QrGenerator.class.getName()).log(Level.SEVERE, null, ex);
         }
