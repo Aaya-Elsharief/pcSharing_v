@@ -88,11 +88,11 @@ public class RSA {
     public static void generateKeys() throws IOException, NoSuchAlgorithmException {
         //Generate RSA Key Pair
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-        generator.initialize(2048);  //The generated key will have a size of 2048 bits.
+        //The generated key will have a size of 2048 bits.
+        generator.initialize(2048);  
         KeyPair pair = generator.generateKeyPair();
         privateKey = pair.getPrivate();
         publicKey = pair.getPublic();
-        // System.out.println("publicKey " +publicKey.toString());
         //Storing Keys in Files
         try (FileOutputStream fos = new FileOutputStream("public.key")) {
             fos.write(publicKey.getEncoded());
