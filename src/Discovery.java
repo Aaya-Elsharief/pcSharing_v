@@ -25,35 +25,18 @@ import java.util.logging.Logger;
 public class Discovery {
 
     public static void start() {
-//        System.out.println(Frame.myPublicKeyStr);
         Frame.jLabel3.setText("Discovery get started... ");
         String instantName = Frame.jtfDeviceName.getText();
         Listener app = new Listener();
-//        app.setInstantName(instantName);
         app.start();
         Register reg = new Register();
-        //   reg.setInstantName(instantName);
         reg.start();
     }
-
-    /*  public static String generateString() {
-        int min = 0;
-        int max = 4;
-        String[] array = {"aswd", "hp", "apple", "qwer", "rand"};
-        int rand = (int) (Math.random() * (max - min + 1) + min);
-        return array[rand];
-
-    }*/
 }
 
 class Register extends Thread {
-
     static String instantName = Frame.jtfDeviceName.getText();
     static String k = Frame.myPublicKeyStr;
-
-//    public static void setInstantName(String instantName) {
-//        Register.instantName = instantName;
-//    }
     @Override
     public void run() {
 
@@ -69,14 +52,10 @@ class Register extends Thread {
         try {
             // Create a JmDNS instance
             JmDNS jmdns = JmDNS.create(InetAddress.getLocalHost());
-          //  System.out.println("k " + k);
-            // Register a service
             Map<String, String> m = new HashMap<>();
             m.put("port", Frame.myPort);
-            m.put("publicKey", "MIIBIjANBgkqhkiGAB/yKuCamd1QbRYYBLqFnYuehjsyOJKVNHllGP/WJrgW1vXNf1sgWU5o+wIDAQAB\n" +
-"");
+            m.put("publicKey", "MIIBIjANBgkqhkiGAB/yKuCamd1QbRYYBLqFnYuehjsyOJKVNHllGP/WJrgW1vXNf1sgWU5o+wIDAQAB\n");
 
-            //final String type, final String name, final int port, final String text
             //final String type, final String name, final int port, final int weight, final int priority, final Map<String, ?> props
             ServiceInfo serviceInfo = ServiceInfo.create("_aaya._tcp.local.", instantName, 1234, 0, 0, m);
             jmdns.registerService(serviceInfo);
@@ -114,24 +93,19 @@ class Listener extends Thread {
         @Override
         public void serviceAdded(ServiceEvent event) {
             System.out.println("Service added: " + event.getInfo());
-
         }
 
         @Override
         public void serviceRemoved(ServiceEvent event) {
             System.out.println("Service removed: " + event.getInfo());
-
             String deviceName = event.getName();
-          //  System.out.println("deviceName " + deviceName);
             for (DeviceInfo dev : Frame.deviceInfoList) {
-
                 if (deviceName.equals(dev.getDeviceName())) {
                     int index = Frame.deviceInfoList.indexOf(dev);
                     DeviceInfo redev = Frame.deviceInfoList.remove(0);
                     System.out.println("device removed " + redev.getDeviceName());
                     break;
                 }
-
             }
             Frame.showDevicesList();
         }
@@ -172,15 +146,12 @@ class Listener extends Thread {
         try {
             // Create a JmDNS instance
             JmDNS jmdns = JmDNS.create(InetAddress.getLocalHost());
-
             // Add a service listener
             jmdns.addServiceListener("_aaya._tcp.local.", new SampleListener());
-
             // Wait a bit
             while(true){
                    Thread.sleep(10000);
             }
-         
         } catch (UnknownHostException e) {
             System.out.println(e.getMessage());
         } catch (IOException e) {
